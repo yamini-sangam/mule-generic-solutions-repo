@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="simple-get-employee-data-sf" doc:id="84a884a0-de59-4832-aa4d-371b8ed6c45e" >
+		<set-variable value="#[attributes.queryParams.offset]" doc:name="Set Offset" doc:id="2078c67f-ad59-4130-942a-f013294c24bf" variableName="offset"/>
+		<set-variable value="#[attributes.queryParams.limit]" doc:name="Set Limit" doc:id="e76aa564-f0c8-4e28-a6a3-e48833c03efa" variableName="limit"/>
+		<db:select doc:name="Get Total Data" doc:id="0c40a376-db48-4776-9031-32aa9032b887" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT COUNT(*) AS total_rows FROM employee;]]></db:sql>
+		</db:select>
+		<choice doc:name="Data Exists?" doc:id="30a7feb6-8c35-40cd-b94b-d42ce9b5f560" >
+			<when expression="#[vars.offset &lt; payload.total_rows[0] and vars.limit &lt;= payload.total_rows[0]]">
+				<db:select doc:name="Get Paginated Data" doc:id="72ff3207-38b6-449c-afd0-4fe7988bf869" config-ref="Database_Config">
+			<db:sql><![CDATA[
+SELECT * FROM test.employee LIMIT :limit OFFSET :offset;
+
+
+]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+	"limit": vars.limit as Number,
+	"offset": vars.offset as Number
+}]]]></db:input-parameters>
+		</db:select>
+				<ee:transform doc:name="Paginated Data Response" doc:id="4a109420-dc6a-4c9e-af1e-93fb5ecb843f">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Invalid Query Params" doc:id="7b2201b6-8751-4062-b6a1-862ab5e6bd06" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	Status:"No Records found"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</sub-flow>
+</mule>

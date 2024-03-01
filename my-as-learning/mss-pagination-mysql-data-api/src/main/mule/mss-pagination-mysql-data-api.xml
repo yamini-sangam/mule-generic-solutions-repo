@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="9b9d9c25-cc90-484e-a89c-1bd6dc0665ef" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="root" database="test" />
+	</db:config>
+	<os:object-store name="Object_store" doc:name="Object store" doc:id="c20ace87-f319-4a8c-94c6-6e478b46b0a0" />
+	<flow name="mss-pagination-mysql-data-apiFlow" doc:id="9c1aab04-a586-41c4-b93b-0f70634e5cd3" >
+		<http:listener doc:name="Listener" doc:id="cca7cf9a-2b62-459c-9ee0-bfae74630335" config-ref="HTTP_Listener_config" path="/pagination"/>
+		<set-variable value="#[10]" doc:name="Set Variable" doc:id="12276e5c-6b82-4503-84b7-0a019f97f340" variableName="limit"/>
+		<os:retrieve doc:name="Retrieve" doc:id="04fbd2e4-4dd5-45ee-8679-02b0f2a58c2e" key="offset" target="offset" objectStore="Object_store">
+			<os:default-value ><![CDATA[#[0]]]></os:default-value>
+		</os:retrieve>
+		<db:select doc:name="Select" doc:id="3839fb9a-ed32-4d08-ad13-ca546b90f93c" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT * FROM test.employee where empID LIMIT :limit OFFSET :offset;]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	"limit": vars.limit,
+	"offset": vars.offset
+}]]]></db:input-parameters>
+		</db:select>
+		<choice doc:name="Choice" doc:id="c013dcb0-2f64-4ea8-ae4b-82ad52e28919" >
+			<when expression="#[!isEmpty(payload) and sizeOf(payload) == vars.limit as Number]">
+				<ee:transform doc:name="Transform Message" doc:id="99bae4cf-12d6-4d41-a7a6-56c53cfb31dc">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<os:store doc:name="Store" doc:id="5a3ab44e-df62-4ab7-be4c-d52acc5965e9" key="offset" objectStore="Object_store">
+					<os:value ><![CDATA[#[vars.limit + vars.offset]]]></os:value>
+				</os:store>
+			</when>
+			<when expression="#[!isEmpty(payload) and sizeOf(payload) &lt; vars.limit as Number]">
+				<ee:transform doc:name="Transform Message" doc:id="18057dd9-8bf7-4dcc-984e-f55b30d91813">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<os:clear doc:name="Clear" doc:id="9096d615-2f24-4840-bfd7-0f4d5220b9d5" objectStore="Object_store"/>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="0219ab64-03f7-48d1-8e25-481f211d4c87" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"status": "Empty payload"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+</mule>

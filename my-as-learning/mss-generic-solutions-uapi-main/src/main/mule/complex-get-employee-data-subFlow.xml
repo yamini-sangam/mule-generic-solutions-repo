@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+	
+	<sub-flow name="get-employee-data-sf" doc:id="0d6cb0d4-b729-4ce4-9fbf-8148987995a8" >
+		<set-variable value="#[attributes.queryParams.limit]" doc:name="Set Limit" doc:id="42e5e75a-2e17-469b-9a21-1fe2e1ff0329" variableName="limit"/>
+		<os:retrieve doc:name="Retrieve Offset Value" doc:id="391c8979-a2bd-4c2e-8b1c-9e722e8d6949" objectStore="Object_store" key="offset" target="offset">
+			<os:default-value ><![CDATA[#[attributes.queryParams.offset]]]></os:default-value>
+		</os:retrieve>
+		<db:select doc:name="Retrieve Employee Details" doc:id="5507e617-9a3c-4979-98ae-8161c4bec892" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT * FROM test.employee where empID LIMIT :limit OFFSET :offset;]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	"limit": vars.limit as Number,
+	"offset": vars.offset as Number
+}]]]></db:input-parameters>
+		</db:select>
+		<choice doc:name="Data Exists?" doc:id="ebda035a-f88f-4f7c-8889-ef3d2ef7e4f2" >
+			<when expression="#[!isEmpty(payload) and sizeOf(payload) == vars.limit as Number]">
+				<ee:transform doc:name="Payload Size == Offset" doc:id="2e5f23b6-d501-4bdd-8b58-6a4b9a27a4c2">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "nextoffset": vars.offset,
+  "morepages": true,
+  "results": 
+  payload
+  
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<os:store doc:name="Store Next Offset Value" doc:id="21992716-ae73-48ff-9922-a124fe22ca16" key="offset" objectStore="Object_store">
+					<os:value ><![CDATA[#[vars.limit + vars.offset]]]></os:value>
+				</os:store>
+			</when>
+			<when expression="#[!isEmpty(payload) and sizeOf(payload) &lt; vars.limit as Number]">
+				<ee:transform doc:name="Payload Size is &lt; Offset" doc:id="3b01664d-953c-4f70-93e5-618f31a74fa4">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "nextoffset": vars.offset,
+  "morepages": false,
+  "results": 
+  payload
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<os:clear doc:name="Reset Offset Value" doc:id="96708c28-1f04-41a7-b407-e6008c03c6af" objectStore="Object_store"/>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Empty Payload" doc:id="50e9f905-04a5-4412-a0dd-10c061c7cecb">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"status": "Empty payload"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<os:clear doc:name="Rest Offset Value" doc:id="93a65d51-748a-44eb-92c1-5deff82f1fbc" objectStore="Object_store"/>
+			</otherwise>
+		</choice>
+	</sub-flow>
+</mule>

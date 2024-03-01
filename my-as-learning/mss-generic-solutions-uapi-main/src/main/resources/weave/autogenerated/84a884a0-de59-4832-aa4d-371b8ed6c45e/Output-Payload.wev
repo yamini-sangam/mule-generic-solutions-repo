@@ -1,0 +1,12 @@
+%dw 2.0
+
+type auto_84a884a0_de59_4832_aa4d_371b8ed6c45e_Output_Payload = {|
+  nextoffset: Any, 
+  results: Array<{ _?: java_lang_Object }>
+|}
+type java_lang_Object = {|  |} {"typeAlias": "Object",
+"class": "java.lang.Object",
+"typeId": "java.lang.Object"}
+
+
+

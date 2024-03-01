@@ -1,0 +1,19 @@
+%dw 2.0
+
+type auto_0d6cb0d4_b729_4ce4_9fbf_8148987995a8_Output_Payload = Array<{ _?: java_lang_Object }> | {|
+  nextoffset?: Null, 
+  status?: String, 
+  results?: Array<Array<{ _?: java_lang_Object_8 }>>, 
+  morepages?: Boolean
+|}
+type java_lang_Object_8 = {|  |} {"typeAlias": "Object",
+"class": "java.lang.Object",
+"typeId": "java.lang.Object"}
+
+
+type java_lang_Object = {|  |} {"typeAlias": "Object",
+"class": "java.lang.Object",
+"typeId": "java.lang.Object"}
+
+
+

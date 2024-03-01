@@ -1,0 +1,62 @@
+#%RAML 1.0
+title: mss-generic-solutions-uapi
+mediaType: 
+- application/json
+version: v1
+baseUri: http://{environment}/mss/gsol/{version}
+baseUriParameters:
+    environment:
+        description: DEV, UAT, QA, PROD
+        enum: [DEV, UAT, QA, PROD]
+
+/employees:
+    get:
+        queryParameters:
+            offset:
+                example: 1
+                type: number
+                format: int
+            limit: 
+                example: 20
+                type: number
+                format: int
+        responses:
+            "200":
+                body:
+                    type: object
+                    properties:
+                        nextoffset: integer
+                        morepages: boolean
+                        results:
+                            type: array
+                            items:
+                                properties:
+                                    employeeId: number
+                                    lastName: string
+                                    firstName: string
+                                    address: string
+                                    city: string
+                    example:
+                        {
+                            "nextoffset": 10,
+                            "morepages": true,
+                            "results": 
+                                [
+                                    {
+                                        "employeeId": 1,
+                                        "lastName": "Wright",
+                                        "firstName": "Olivia",
+                                        "address": "909 Oak St",
+                                        "city": "Sacramento"
+                                    },
+                                    {
+                                        "employeeId": 2,
+                                        "lastName": "Nguyen",
+                                        "firstName": "Daniel",
+                                        "address": "111 Maple St",
+                                        "city": "Kansas City"
+                                    }
+                                ]
+                         }
+                    
+                    

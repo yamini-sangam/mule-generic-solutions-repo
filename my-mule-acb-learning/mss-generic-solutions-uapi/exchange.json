@@ -1,0 +1,11 @@
+{
+  "version": "1.0.1",
+  "apiVersion": "v1",
+  "descriptorVersion": "1.0.0",
+  "classifier": "raml",
+  "main": "mss-generic-solutions-uapi.raml",
+  "assetId": "mss-generic-solutions-uapi",
+  "groupId": "5d1848f0-bd0b-411c-9c4a-a22c4dd0bea6",
+  "organizationId": "5d1848f0-bd0b-411c-9c4a-a22c4dd0bea6",
+  "name": "mss-generic-solutions-uapi"
+}
