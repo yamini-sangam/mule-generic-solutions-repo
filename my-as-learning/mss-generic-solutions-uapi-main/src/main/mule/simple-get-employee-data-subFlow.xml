@@ -11,8 +11,9 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 		<db:select doc:name="Get Total Data" doc:id="0c40a376-db48-4776-9031-32aa9032b887" config-ref="Database_Config">
 			<db:sql ><![CDATA[SELECT COUNT(*) AS total_rows FROM employee;]]></db:sql>
 		</db:select>
+		<set-variable value="#[payload.total_rows[0]]" doc:name="Set Total Records" doc:id="2f8c49e1-451b-49af-9734-bd0aa563cefc" variableName="totalRecords"/>
 		<choice doc:name="Data Exists?" doc:id="30a7feb6-8c35-40cd-b94b-d42ce9b5f560" >
-			<when expression="#[vars.offset &lt; payload.total_rows[0] and vars.limit &lt;= payload.total_rows[0]]">
+			<when expression="#[vars.offset &lt; vars.totalRecords and vars.limit &lt;= vars.totalRecords]">
 				<db:select doc:name="Get Paginated Data" doc:id="72ff3207-38b6-449c-afd0-4fe7988bf869" config-ref="Database_Config">
 			<db:sql><![CDATA[
 SELECT * FROM test.employee LIMIT :limit OFFSET :offset;
@@ -29,7 +30,12 @@ SELECT * FROM test.employee LIMIT :limit OFFSET :offset;
 				<ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
-payload]]></ee:set-payload>
+{
+    nextOffset: if (sizeOf(payload) > 0 and vars.offset as Number + sizeOf(payload) < vars.totalRecords) vars.offset as Number + 1 + sizeOf(payload) else "No Next Offset Value",
+    morePages: sizeOf(payload) > 0 and vars.offset as Number + sizeOf(payload) < vars.totalRecords,
+    results: payload
+}
+]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
 			</when>
